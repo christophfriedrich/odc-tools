@@ -92,7 +92,13 @@ def process_item(
     rename_product: Optional[str] = None,
     archive_less_mature: int = None,
     publish_action: bool = False,
+    asset_name_mapping: Optional[str] = None,
 ):
+    for mapping in asset_name_mapping.split(','):
+        name_from, name_to = mapping.split('/')
+        if item.assets[name_from] is not None:
+            item.assets[name_to] = item.assets[name_from]
+            del item.assets[name_from]
     meta, uri, stac = item_to_meta_uri(item, rename_product)
     index_update_dataset(
         meta,
@@ -116,6 +122,7 @@ def stac_api_to_odc(
     rename_product: Optional[str] = None,
     archive_less_mature: int = None,
     publish_action: Optional[str] = None,
+    asset_name_mapping: Optional[str] = None,
 ) -> Tuple[int, int, int]:
     doc2ds = Doc2Dataset(dc.index)
     client = Client.open(catalog_href)
@@ -148,6 +155,7 @@ def stac_api_to_odc(
                 rename_product=rename_product,
                 archive_less_mature=archive_less_mature,
                 publish_action=publish_action,
+                asset_name_mapping=asset_name_mapping,
             ): item.id
             for item in search.get_all_items()
         }
@@ -197,6 +205,14 @@ def stac_api_to_odc(
     default=None,
     help="Other search terms, as a # separated list, i.e., --options=cloud_cover=0,100#sky=green",
 )
+@click.option(
+    "--asset-name-mapping",
+    type=str,
+    default=None,
+    help=(
+        "Rewrite asset names, e.g. from band numbers to common names: --asset-name-mapping=B02/blue,B03/green,B04/red"
+    ),
+)
 @rename_product
 @archive_less_mature
 @publish_action
@@ -214,6 +230,7 @@ def cli(
     statsd_setting,
     archive_less_mature,
     publish_action,
+    asset_name_mapping
 ):
     """
     Iterate through STAC items from a STAC API and add them to datacube.
@@ -245,6 +262,7 @@ def cli(
         rename_product=rename_product,
         archive_less_mature=archive_less_mature,
         publish_action=publish_action,
+        asset_name_mapping=asset_name_mapping,
     )
 
     print(
