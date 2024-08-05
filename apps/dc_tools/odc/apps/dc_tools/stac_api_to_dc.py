@@ -94,11 +94,12 @@ def process_item(
     publish_action: bool = False,
     asset_name_mapping: Optional[str] = None,
 ):
-    for mapping in asset_name_mapping.split(','):
-        name_from, name_to = mapping.split('/')
-        if item.assets[name_from] is not None:
-            item.assets[name_to] = item.assets[name_from]
-            del item.assets[name_from]
+    if asset_name_mapping:
+        for mapping in asset_name_mapping.split(','):
+            name_from, name_to = mapping.split('/')
+            if item.assets[name_from] is not None:
+                item.assets[name_to] = item.assets[name_from]
+                del item.assets[name_from]
     meta, uri, stac = item_to_meta_uri(item, rename_product)
     index_update_dataset(
         meta,
